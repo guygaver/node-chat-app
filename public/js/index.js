@@ -1,5 +1,23 @@
 let socket = io();
 
+function scrollToBottom() {
+    // selectors
+    let $messages = jQuery('#messages');
+    let $newMessage = jQuery($messages.children('li:last-child'));
+    
+
+    // heights
+    let clientHeight = $messages.prop('clientHeight');
+    let scrollTop = $messages.prop('scrollTop');
+    let scrollHeight = $messages.prop('scrollHeight');
+    let newMessageHeight = $newMessage.innerHeight();
+    let lastMessageHeight = $newMessage.prev().innerHeight();
+    
+    if ( clientHeight + scrollTop + newMessageHeight + lastMessageHeight >= scrollHeight ) {
+        $messages.scrollTop(scrollHeight);
+    }
+}
+
 socket.on('connect', function () {
     console.log('Connected to server');
 });
@@ -11,14 +29,16 @@ socket.on('disconnect', function () {
 socket.on('newMessage', function (message) {
     let formattedTime = moment(message.createdAt).format('h:mm a');
     let template = jQuery('#message-template').html();
-    
+
     let html = Mustache.render(template, {
         text: message.text,
         from: message.from,
         createdAt: formattedTime
     });
-    
+
     jQuery('#messages').append(html);
+
+    scrollToBottom();
 });
 
 socket.on('newLocationMessage', function (message) {
@@ -31,8 +51,10 @@ socket.on('newLocationMessage', function (message) {
         createdAt: formattedTime,
         url: message.url
     });
-    
+
     jQuery('#messages').append(html);
+
+    scrollToBottom();
 });
 
 jQuery('#message-form').on('submit', (e) => {
@@ -50,7 +72,7 @@ jQuery('#message-form').on('submit', (e) => {
 let $locationButton = jQuery('#send-location');
 
 $locationButton.on('click', (e) => {
-    
+
     if ( !"geolocation" in navigator ) {
         return alert('Geolocation not supported by your browser');
     }
@@ -58,7 +80,7 @@ $locationButton.on('click', (e) => {
     $locationButton.attr('disabled', 'disabled').text('Sending location...');
 
     navigator.geolocation.getCurrentPosition((position) => {
-        
+
         socket.emit('createLocationMessage', {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
