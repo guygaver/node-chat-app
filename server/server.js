@@ -15,12 +15,18 @@ app.use(express.static(publicPath));
 
 io.on('connection', (socket) => {
    console.log('New user connected');
-   
-   socket.emit('newEmail', {
-       from: 'mike@example.com',
-       test: 'hey whats going on',
-       creator: 123
-   });
+
+    socket.emit('newMessage', {
+        from: 'admin',
+        text: 'Welcome to the chat ',
+        created_at: new Date().getTime()
+    });
+
+    socket.broadcast.emit('newMessage', {
+        from: 'admin',
+        text: 'New user joined the chat',
+        created_at: new Date().getTime()
+    });
    
    socket.on('createEmail', (newEmail) => {
        console.log('createEmail', newEmail);
@@ -29,7 +35,7 @@ io.on('connection', (socket) => {
     socket.on('createMessage', (message) => {
         console.log(message);
         
-        io.emit('newMessage', {
+        socket.broadcast.emit('newMessage', {
             from: message.from,
             text: message.text,
             created_at: new Date().getTime()
